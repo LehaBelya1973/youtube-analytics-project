@@ -13,33 +13,33 @@ class Channel:
         """Экземпляр инициализируется id канала. Дальше все данные будут подтягиваться по API."""
         load_dotenv()
         self.api_key = os.getenv('YT_API_KEY') # Получаем ключ из переменных окружения
-        self.channel = self.youtube().channels().list(id=channel_id, part='snippet,statistics').execute()
+        self.channel = self.get_service().channels().list(id=channel_id, part='snippet,statistics').execute()
         self.__channel_id = channel_id
+        self.title = self.channel['items'][0]['snippet']['title']
+        self.description = self.channel['items'][0]['snippet']['description']
+        self.subscriber_count = self.channel['items'][0]['statistics']['subscriberCount']
+        self.video_count = self.channel['items'][0]['statistics']['videoCount']
+        self.view_count = self.channel['items'][0]['statistics']['viewCount']
+        self.url = 'https://www.youtube.com/channel/'+self.__channel_id
 
 
-    def print_info(self) -> None | dict:
+    def print_info(self) -> None:
         """Выводит в консоль информацию о канале."""
-        if not self.api_key:
-            print("Ключ API YouTube не задан. Установите его в переменных окружения YT_API_KEY.")
-            return
-
         print(json.dumps(self.channel, indent=2, ensure_ascii=False))
 
-    @property
-    def title(self):
-        return self.print_info()['items'][0]['snippet']['title']
-
-    @property
-    def video_count(self):
-        return self.print_info()['items'][0]['statistics']['videoCount']
-
-    @property
-    def url(self):
-        return f"https://www.youtube.com/channel/{self.print_info()['items'][0]['id']}"
 
     @property
     def channel_id(self):
         return self.__channel_id
 
-    def youtube(self):
-        return build('youtube', 'v3', developerKey=self.api_key)
+    @classmethod
+    def get_service(cls):
+        load_dotenv()
+        api_key = os.getenv('YT_API_KEY')  # Получаем ключ из переменных окружения
+        return build('youtube', 'v3', developerKey=api_key)
+
+    def to_json(self, filename):
+        data = self.__dict__
+        del(data['channel'])
+        with open(filename, 'w') as file:
+            json.dump(data, file, indent=2, ensure_ascii=False)
